@@ -1,3 +1,7 @@
+// Content script: builds overlay UI, handles SpeechRecognition when available,
+// and relays translation requests to the background. If SpeechRecognition is
+// not available in the content world (e.g. cross‑origin iframes), injects
+// a page‑context script (page.js) to handle recognition and bridges messages.
 (function() {
   if (window.__audioTranslatorInjected) return;
   window.__audioTranslatorInjected = true;

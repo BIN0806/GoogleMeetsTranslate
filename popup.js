@@ -1,3 +1,6 @@
+// Popup script: injects content.js into the active tab, lets users
+// start/stop recognition, and choose input/output languages. Persists
+// settings via chrome.storage.sync and broadcasts changes to the tab.
 const startBtn = document.getElementById('start');
 const textList = document.getElementById('text-list');
 const inputSel = document.getElementById('inputLang');
