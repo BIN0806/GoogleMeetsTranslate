@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Audio Translator",
+  "description": "Transcribe audio, translate it, and display it.",
+  "version": "1.0",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*",
+    "https://libretranslate.de/*",
+    "https://translate.argosopentech.com/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [{
+    "resources": ["content.js", "page.js"],
+    "matches": ["<all_urls>"]
+  }],
+  "icons": {
+    "128": "icon.png"
+  }
+}
