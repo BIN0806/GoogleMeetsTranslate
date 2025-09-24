@@ -1,0 +1,2 @@
+# LiveVideoTranslation
+A chrome extension that assists real-time translation of live video calls, enabling instant translation on audio transmissions, translating speech in real-time for the output users.
