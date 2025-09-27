@@ -6,20 +6,20 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🎙️ Audio Translator</h1>
-  <div style="display:flex; gap:8px; margin-bottom:8px;">
-    <select id="inputLang" style="flex:1;"></select>
-    <select id="outputLang" style="flex:1;"></select>
+  <h1>Voice Bloom — Translator</h1>
+  <div class="controls-row">
+    <select id="inputLang"></select>
+    <select id="outputLang"></select>
   </div>
   <button id="start" class="btn">Start Listening</button>
-  <section style="margin-top:12px; display:flex; flex-direction:column; gap:6px;">
-    <label for="endpoints" style="font-size:12px; color:#334155;">Translation API endpoints (one per line)</label>
-    <textarea id="endpoints" rows="3" placeholder="https://your-server.example.com/translate" style="font-size:12px; padding:6px; resize:vertical;"></textarea>
-    <div style="display:flex; gap:8px;">
+  <section style="margin-top:12px; display:flex; flex-direction:column; gap:8px;" class="card">
+    <label for="endpoints">Translation API endpoints (one per line)</label>
+    <textarea id="endpoints" rows="3" placeholder="https://your-server.example.com/translate"></textarea>
+    <div class="controls-row" style="margin:0;">
       <button id="saveEndpoints" class="btn" style="flex:1;">Save Endpoints</button>
       <button id="testEndpoint" class="btn" style="flex:1;">Test Endpoint</button>
     </div>
-    <div id="endpointStatus" style="min-height:18px; font-size:12px; color:#475569;"></div>
+    <div id="endpointStatus" style="min-height:18px; font-size:12px;"></div>
   </section>
   <ul id="text-list"></ul>
   <script src="popup.js"></script>

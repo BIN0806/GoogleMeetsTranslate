@@ -213,12 +213,25 @@ testEndpointBtn.addEventListener('click', async () => {
     showEndpointStatus('Enter at least one endpoint to test.', false);
     return;
   }
-  showEndpointStatus('Testing…', true);
-  const result = await testEndpoint(endpoints[0]);
-  if (result.ok) {
-    showEndpointStatus(`Success: ${result.endpoint}`, true);
-  } else {
-    showEndpointStatus(result.error || 'Failed to reach endpoint.', false);
+  // Persist and inform background first
+  setPrefs({ endpoints });
+  setEndpoints(endpoints);
+  showEndpointStatus('Testing via background…', true);
+  try {
+    const startedAt = Date.now();
+    chrome.runtime.sendMessage(
+      { __audioTranslatorBg: true, text: 'ping', source: 'en', target: 'es' },
+      (resp) => {
+        const ms = Date.now() - startedAt;
+        if (resp && resp.ok) {
+          showEndpointStatus(`Success (${ms} ms)`, true);
+        } else {
+          showEndpointStatus(`Failed: ${(resp && resp.error) || 'unknown error'}`, false);
+        }
+      }
+    );
+  } catch (e) {
+    showEndpointStatus('Failed to reach endpoint.', false);
   }
 });
 

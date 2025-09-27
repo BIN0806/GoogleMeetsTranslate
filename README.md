@@ -3,12 +3,13 @@ A chrome extension that assists real-time translation of live video calls, enabl
 
 
 # How to Install
-1. Load unpacked in Chrome (Developer Mode).
+1. Download Docker for Local Hosting
+2. Clone git then load the folder as unpacked in Chrome (Developer Mode).
 2. Open Google Meet, use the popup to **Start Listening**.
-3 Configure translation endpoints (see below).
+3. Configure translation endpoints (see below).
 
 # Self-hosted LibreTranslate
-Because public LibreTranslate mirrors now require API keys or return HTML landing pages, ship a local server with Docker:
+Because public LibreTranslate mirrors now require API keys we can ship a local server with Docker instead:
 
 ## Quick start (macOS/Linux)
 ```bash
@@ -22,7 +23,7 @@ cd self-host
 ./run-server.ps1
 ```
 
-This launches the official `libretranslate/libretranslate` container on `http://localhost:5000/translate`.
+This launches the official `libretranslate/libretranslate` container on `http://localhost:{PORT}/translate`. You will see the port in the terminal once you run the above commands.
 
 Under the popup’s **Translation API endpoints** field, enter:
 ```
