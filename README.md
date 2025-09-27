@@ -31,42 +31,125 @@ http://localhost:<chosen-port>/translate
 ```
 Click **Save Endpoints**, optionally **Test Endpoint**, then start listening.
 
-# Documentation 
-manifest.json: 
-    MV3 config.Keys:
-    background.service_worker: background.js
-    web_accessible_resources: content.js, page.js
-    permissions: activeTab, scripting, storage
-    host_permissions: LibreTranslate endpoints and Google Meet
-background.js: 
-    Translation relay and debug flag persistence.
-    Imports: translator.js, language-mapper.js via importScripts.
-    Message handler:
-    __audioTranslatorDebug: toggles persisted DEBUG.
-    __audioTranslatorBg: calls translateViaEndpoints, maps languages via mapToProviderLang.
-content.js: 
-    Overlay UI, SpeechRecognition (when available), bridge to page script when not.
-    Injects page.js via chrome.runtime.getURL('page.js') if needed.
-    translateText(text, source, target): sends to background and tracks latency/HUD stats.
-    Overlays appear on the page; use Ctrl/Cmd+D to toggle HUD, Ctrl/Cmd+B to toggle debug logging.
-    Handles messages START, STOP, CONFIG; shows toasts; HUD hotkeys (Ctrl/Cmd+D/B).
-page.js: 
-    Page-context SpeechRecognition handler for environments where content scripts cannot access it.
-    Creates recognition; posts input transcript toast and translated toast via window messaging.
-    Bridges translation via content script using __audioTranslatorTranslate handshake.
-popup.js: 
-    User UI for starting/stopping and selecting languages.
-    ensureContentScript(): injects content.js via chrome.scripting.executeScript.
-    sendControl(type): sends START/STOP.
-    Prefs helpers: saves to chrome.storage.sync, broadcasts CONFIG.
-translator.js: 
-    Parallel endpoint racer for LibreTranslate-style APIs.
-    translateViaEndpoints({ text, source, target, endpoints, timeoutMs, fetchImpl }): returns first success or { ok:false }.
-    Exposes DEFAULT_ENDPOINTS.
-language-mapper.js: BCP-47 (IETF language tag)
-    Maps BCP-47/aliases to provider codes.
-    mapToProviderLang(input): returns auto or base/alias.
-tests/translator.test.js: 
-    Node-based test of success/fallback/invalid args using a mock fetch.
-tests/language-mapper.test.js: 
-    Node-based test verifying mapping logic and edge cases.
+# Documentation
+
+## `manifest.json`
+
+**MV3 Config Keys:**
+
+- `background.service_worker`: `background.js`
+- `web_accessible_resources`: `content.js`, `page.js`
+- `permissions`:  
+  - `activeTab`  
+  - `scripting`  
+  - `storage`
+- `host_permissions`:  
+  - LibreTranslate endpoints  
+  - Google Meet
+
+---
+
+## `background.js`
+
+Translation relay and debug flag persistence.  
+**Imports:** `translator.js`, `language-mapper.js` via `importScripts`.
+
+**Message Handler:**
+
+- `__audioTranslatorDebug`: toggles persisted `DEBUG`
+- `__audioTranslatorBg`:  
+  - calls `translateViaEndpoints`  
+  - maps languages via `mapToProviderLang`
+
+---
+
+## `content.js`
+
+Overlay UI, `SpeechRecognition` (when available), bridge to page script when not.  
+Injects `page.js` via `chrome.runtime.getURL('page.js')` if needed.
+
+**Functions:**
+
+- `translateText(text, source, target)`:  
+  Sends to background and tracks latency/HUD stats.
+
+**Features:**
+
+- Overlays appear on the page
+- HUD hotkeys:
+  - `Ctrl/Cmd + D`: toggle HUD  
+  - `Ctrl/Cmd + B`: toggle debug logging
+- Handles messages: `START`, `STOP`, `CONFIG`
+- Shows toasts
+
+---
+
+## `page.js`
+
+Page-context `SpeechRecognition` handler for environments where content scripts cannot access it.
+
+**Behavior:**
+
+- Creates recognition
+- Posts input transcript toast and translated toast via window messaging
+- Bridges translation via content script using `__audioTranslatorTranslate` handshake
+
+---
+
+## `popup.js`
+
+User UI for starting/stopping and selecting languages.
+
+**Functions:**
+
+- `ensureContentScript()`:  
+  Injects `content.js` via `chrome.scripting.executeScript`
+- `sendControl(type)`:  
+  Sends `START`/`STOP`
+- Prefs helpers:  
+  Saves to `chrome.storage.sync`, broadcasts `CONFIG`
+
+---
+
+## `translator.js`
+
+Parallel endpoint racer for LibreTranslate-style APIs.
+
+**Function:**
+
+- `translateViaEndpoints({ text, source, target, endpoints, timeoutMs, fetchImpl })`:  
+  Returns first success or `{ ok: false }`
+
+**Exposes:**
+
+- `DEFAULT_ENDPOINTS`
+
+---
+
+## `language-mapper.js`
+
+**BCP-47 (IETF language tag)** mapper.
+
+**Functions:**
+
+- Maps BCP-47/aliases to provider codes
+- `mapToProviderLang(input)`: returns `auto` or base/alias
+
+---
+
+## Tests
+
+### `tests/translator.test.js`
+
+Node-based test of:
+
+- Success
+- Fallback
+- Invalid args (using mock `fetch`)
+
+### `tests/language-mapper.test.js`
+
+Node-based test verifying:
+
+- Mapping logic
+- Edge cases
