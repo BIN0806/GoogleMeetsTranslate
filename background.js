@@ -3,18 +3,30 @@ try { importScripts('translator.js'); } catch {}
 try { importScripts('language-mapper.js'); } catch {}
 
 let DEBUG = false;
+let customEndpoints = [];
 try {
   chrome.storage && chrome.storage.sync && chrome.storage.sync.get({ DEBUG: false }, (cfg) => {
     DEBUG = !!(cfg && cfg.DEBUG);
+  });
+  chrome.storage && chrome.storage.sync && chrome.storage.sync.get({ endpoints: [] }, (cfg) => {
+    customEndpoints = Array.isArray(cfg?.endpoints) ? cfg.endpoints : [];
   });
 } catch {}
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (!msg) return;
 
+  if (msg.__audioTranslatorEndpoints === true && Array.isArray(msg.endpoints)) {
+    customEndpoints = msg.endpoints;
+    try { chrome.storage && chrome.storage.sync && chrome.storage.sync.set({ endpoints: customEndpoints }); } catch {}
+    sendResponse && sendResponse({ ok: true, endpoints: customEndpoints });
+    return true;
+  }
+
   // Toggle debug from content HUD
   if (msg.__audioTranslatorDebug === true && typeof msg.enabled === 'boolean') {
     DEBUG = !!msg.enabled;
+
     try { chrome.storage && chrome.storage.sync && chrome.storage.sync.set({ DEBUG }); } catch {}
     sendResponse && sendResponse({ ok: true, DEBUG });
     return true;
@@ -27,7 +39,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     const startedAt = Date.now();
     (async () => {
       try {
-        const result = await translateViaEndpoints({ text, source: mappedSource, target: mappedTarget });
+        const endpoints = customEndpoints && customEndpoints.length ? customEndpoints : undefined;
+        const result = await translateViaEndpoints({ text, source: mappedSource, target: mappedTarget, endpoints });
         const latencyMs = Date.now() - startedAt;
         if (DEBUG) console.log('[BG] translate', { text, mappedSource, mappedTarget, result, latencyMs });
         if (result && result.ok) {

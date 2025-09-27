@@ -29,7 +29,9 @@
     // Japanese
     'ja': 'ja', 'ja-JP': 'ja',
     // Korean
-    'ko': 'ko', 'ko-KR': 'ko'
+    'ko': 'ko', 'ko-KR': 'ko',
+    // Vietnamese
+    'vi': 'vi', 'vi-VN': 'vi'
   };
 
   function mapToProviderLang(input) {

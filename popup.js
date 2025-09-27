@@ -5,6 +5,10 @@ const startBtn = document.getElementById('start');
 const textList = document.getElementById('text-list');
 const inputSel = document.getElementById('inputLang');
 const outputSel = document.getElementById('outputLang');
+const endpointsTextarea = document.getElementById('endpoints');
+const saveEndpointsBtn = document.getElementById('saveEndpoints');
+const testEndpointBtn = document.getElementById('testEndpoint');
+const endpointStatus = document.getElementById('endpointStatus');
 
 let isListening = false;
 
@@ -86,7 +90,8 @@ const LANGS = [
   { code: 'ar', name: 'Arabic' },
   { code: 'zh', name: 'Chinese' },
   { code: 'ja', name: 'Japanese' },
-  { code: 'ko', name: 'Korean' }
+  { code: 'ko', name: 'Korean' },
+  { code: 'vi', name: 'Vietnamese' }
 ];
 
 function fillSelect(sel, selected) {
@@ -130,10 +135,12 @@ function setPrefs(prefs) {
 }
 
 async function loadPrefs() {
-  const defaults = { inputLang: 'en', outputLang: 'es' };
+  const defaults = { inputLang: 'en', outputLang: 'es', endpoints: [] };
   const cfg = await getPrefs(defaults);
   fillSelect(inputSel, cfg.inputLang);
   fillSelect(outputSel, cfg.outputLang);
+  endpointsTextarea.value = (cfg.endpoints || []).join('\n');
+  setEndpoints(cfg.endpoints || []);
   const injected = await ensureContentScript();
   if (injected) broadcastConfig(cfg.inputLang, cfg.outputLang);
 }
@@ -141,8 +148,42 @@ async function loadPrefs() {
 function savePrefs() {
   const inputLang = inputSel.value;
   const outputLang = outputSel.value;
-  setPrefs({ inputLang, outputLang });
+  const endpoints = endpointsTextarea.value.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  setPrefs({ inputLang, outputLang, endpoints });
+  setEndpoints(endpoints);
   broadcastConfig(inputLang, outputLang);
+}
+
+function setEndpoints(endpoints) {
+  try {
+    chrome.runtime.sendMessage({ __audioTranslatorEndpoints: true, endpoints }, () => {});
+  } catch {}
+}
+
+function showEndpointStatus(text, success) {
+  if (!endpointStatus) return;
+  endpointStatus.textContent = text;
+  endpointStatus.style.color = success ? '#15803d' : '#b91c1c';
+}
+
+async function testEndpoint(url) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ q: 'ping', source: 'en', target: 'es', format: 'text' })
+    });
+    if (!response.ok) {
+      return { ok: false, error: `HTTP ${response.status}` };
+    }
+    const data = await response.json().catch(() => null);
+    if (data && (data.translatedText || (data.data && data.data.translations))) {
+      return { ok: true, endpoint: url };
+    }
+    return { ok: false, error: 'Unexpected response format.' };
+  } catch (e) {
+    return { ok: false, error: e && e.message ? e.message : 'Request failed.' };
+  }
 }
 
 function broadcastConfig(inputLang, outputLang) {
@@ -161,6 +202,25 @@ function broadcastConfig(inputLang, outputLang) {
 
 inputSel.addEventListener('change', savePrefs);
 outputSel.addEventListener('change', savePrefs);
+saveEndpointsBtn.addEventListener('click', () => {
+  savePrefs();
+  showEndpointStatus('Endpoints saved.', true);
+});
+
+testEndpointBtn.addEventListener('click', async () => {
+  const endpoints = endpointsTextarea.value.split(/\n+/).map(s => s.trim()).filter(Boolean);
+  if (!endpoints.length) {
+    showEndpointStatus('Enter at least one endpoint to test.', false);
+    return;
+  }
+  showEndpointStatus('Testing…', true);
+  const result = await testEndpoint(endpoints[0]);
+  if (result.ok) {
+    showEndpointStatus(`Success: ${result.endpoint}`, true);
+  } else {
+    showEndpointStatus(result.error || 'Failed to reach endpoint.', false);
+  }
+});
 
 document.addEventListener('DOMContentLoaded', async () => {
   await ensureContentScript();

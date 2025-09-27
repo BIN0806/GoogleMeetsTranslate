@@ -11,6 +11,7 @@ function run() {
   expectEqual(mapToProviderLang('auto'), 'auto', 'auto stays auto');
   expectEqual(mapToProviderLang('ja-JP'), 'ja', 'ja-JP → ja');
   expectEqual(mapToProviderLang('fr-CA'), 'fr', 'fr-CA → fr');
+  expectEqual(mapToProviderLang('vi-VN'), 'vi', 'vi-VN → vi');
   expectEqual(mapToProviderLang('xx-YY'), 'xx', 'unknown → base');
   console.log('language-mapper.test: ok');
 }

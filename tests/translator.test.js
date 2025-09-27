@@ -1,8 +1,8 @@
-const { translateViaEndpoints } = require('../translator');
+const { translateViaEndpoints } = require('../js/translator');
 
 function createFetch(ok = true, text = 'hola', failCount = 0) {
   let calls = 0;
-  const impl = async (url, opts) => {
+  const impl = async (url) => {
     calls++;
     if (failCount-- > 0) {
       return { ok: false, status: 503, json: async () => ({}) };
@@ -17,24 +17,24 @@ function createFetch(ok = true, text = 'hola', failCount = 0) {
   return impl;
 }
 
-async function run() {
-  // Successful first endpoint
-  const fetch1 = createFetch(true, 'hello');
-  const res1 = await translateViaEndpoints({ text: 'hola', source: 'es', target: 'en', endpoints: ['a','b'], fetchImpl: fetch1, timeoutMs: 2000 });
-  console.assert(res1.ok && res1.translatedText === 'hello', 'res1 should succeed');
+describe('translateViaEndpoints', () => {
+  test('succeeds on first endpoint', async () => {
+    const fetch1 = createFetch(true, 'hello');
+    const res = await translateViaEndpoints({ text: 'hola', source: 'es', target: 'en', endpoints: ['a','b'], fetchImpl: fetch1, timeoutMs: 2000 });
+    expect(res.ok).toBe(true);
+    expect(res.translatedText).toBe('hello');
+  });
 
-  // First fails, second succeeds
-  const fetch2 = createFetch(true, 'ciao', 1);
-  const res2 = await translateViaEndpoints({ text: 'hola', source: 'en', target: 'it', endpoints: ['a','b'], fetchImpl: fetch2, timeoutMs: 2000 });
-  console.assert(res2.ok && res2.translatedText === 'ciao', 'res2 should fallback succeed');
+  test('falls back when first endpoint fails', async () => {
+    const fetch2 = createFetch(true, 'ciao', 1);
+    const res = await translateViaEndpoints({ text: 'hola', source: 'en', target: 'it', endpoints: ['a','b'], fetchImpl: fetch2, timeoutMs: 2000 });
+    expect(res.ok).toBe(true);
+    expect(res.translatedText).toBe('ciao');
+  });
 
-  // Invalid args
-  const res3 = await translateViaEndpoints({ text: '', target: 'en', fetchImpl: fetch1 });
-  console.assert(!res3.ok, 'res3 should fail invalid args');
-
-  console.log('translator.test: ok');
-}
-
-run().catch((e) => { console.error(e); process.exit(1); });
-
-
+  test('returns error on invalid args', async () => {
+    const fetch3 = createFetch(true, 'hello');
+    const res = await translateViaEndpoints({ text: '', target: 'en', fetchImpl: fetch3 });
+    expect(res.ok).toBe(false);
+  });
+});

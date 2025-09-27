@@ -56,6 +56,7 @@
           body: JSON.stringify({ q: text, source: source || 'auto', target, format: 'text' }),
           signal: controller ? controller.signal : undefined
         });
+        
         if (!res.ok) throw new Error(`bad_status_${res.status}`);
         const data = await res.json();
         if (!data || !data.translatedText) throw new Error('no_translatedText');

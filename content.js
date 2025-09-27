@@ -55,6 +55,22 @@
   header.textContent = 'Audio Translator';
   container.appendChild(header);
 
+  // Status dot (green when last request ok, red on failure)
+  const statusDot = document.createElement('span');
+  statusDot.style.width = '8px';
+  statusDot.style.height = '8px';
+  statusDot.style.borderRadius = '50%';
+  statusDot.style.display = 'inline-block';
+  statusDot.style.backgroundColor = '#64748b';
+  header.appendChild(statusDot);
+
+  // Latency + endpoint badge
+  const latencyBadge = document.createElement('span');
+  latencyBadge.style.marginLeft = 'auto';
+  latencyBadge.style.fontSize = '11px';
+  latencyBadge.style.opacity = '0.85';
+  header.appendChild(latencyBadge);
+
   // Body (messages)
   const body = document.createElement('div');
   body.style.position = 'relative';
@@ -88,7 +104,9 @@
     output: 'es',
     translations: 0,
     lastMs: 0,
-    avgMs: 0
+    avgMs: 0,
+    lastOk: false,
+    lastEndpoint: ''
   };
 
   function setDebug(enabled) {
@@ -111,15 +129,16 @@
       `mode: ${stats.mode}\n` +
       `lang: ${stats.input} → ${stats.output}\n` +
       `translations: ${stats.translations}\n` +
-      `last: ${stats.lastMs} ms  avg: ${stats.avgMs.toFixed(0)} ms`;
+      `last: ${stats.lastMs} ms  avg: ${stats.avgMs.toFixed(0)} ms\n` +
+      (stats.lastEndpoint ? `endpoint: ${stats.lastEndpoint}` : '');
   }
 
   document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.altKey && (e.key === 'd' || e.key === 'D')) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
       toggleHUD();
       e.preventDefault();
     }
-    if ((e.ctrlKey || e.metaKey) && e.altKey && (e.key === 'b' || e.key === 'B')) {
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'b' || e.key === 'B')) {
       setDebug(!DEBUG);
       e.preventDefault();
     }
@@ -132,14 +151,6 @@
     showToast(data.text);
   });
 
-  // Bridge translation requests from page to background and back
-  window.addEventListener('message', (e) => {
-    const d = e.data;
-    if (!d || d.__audioTranslatorTranslate !== true) return;
-    translateText(d.text, d.source, d.target).then((t) => {
-      window.postMessage({ __audioTranslatorTranslateResult: true, ok: t && t !== '[Translation Failed]', text: t }, '*');
-    });
-  });
 
   // Resizer
   const resizer = document.createElement('div');
@@ -189,6 +200,18 @@
       toast.style.transform = 'translateY(8px)';
       setTimeout(() => toast.remove(), 220);
     }, 3000);
+  }
+
+  function updateBadges() {
+    statusDot.style.backgroundColor = stats.lastOk ? '#22c55e' : '#ef4444';
+    if (stats.lastMs > 0) {
+      const host = (() => {
+        try { return stats.lastEndpoint ? new URL(stats.lastEndpoint).host : ''; } catch { return ''; }
+      })();
+      latencyBadge.textContent = `${Math.round(stats.lastMs)} ms${host ? ` · ${host}` : ''}`;
+    } else {
+      latencyBadge.textContent = '';
+    }
   }
 
   // Dragging
@@ -301,13 +324,19 @@
             stats.lastMs = latency;
             const n = stats.translations;
             stats.avgMs = ((stats.avgMs * (n - 1)) + latency) / n;
+            stats.lastOk = !!(resp && resp.ok);
+            stats.lastEndpoint = (resp && resp.endpoint) || '';
+            updateBadges();
             renderHUD();
             if (resp && resp.ok) return resolve({ text: resp.translatedText, ms: latency });
-            resolve({ text: 'Translate Text:[Translation Failed]', ms: latency });
+            resolve({ text: '[Translation Failed]', ms: latency });
           }
         );
       } catch (e) {
-        resolve({ text: 'Translate Text: [Translation Failed]', ms: 0 });
+        stats.lastOk = false;
+        stats.lastEndpoint = '';
+        updateBadges();
+        resolve({ text: '[Translation Failed]', ms: 0 });
       }
     });
   }

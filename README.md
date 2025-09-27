@@ -3,9 +3,32 @@ A chrome extension that assists real-time translation of live video calls, enabl
 
 
 # How to Install
-Load unpacked in Chrome → this folder.
-Open a site tab, use popup to Start Listening.
-If content cannot access SpeechRecognition, it injects page.js and handles recognition in main world. Overlays appear on the page; use Ctrl/Cmd+Alt+D to toggle HUD, Ctrl/Cmd+Alt+B to toggle debug logging.
+1. Load unpacked in Chrome (Developer Mode).
+2. Open Google Meet, use the popup to **Start Listening**.
+3 Configure translation endpoints (see below).
+
+# Self-hosted LibreTranslate
+Because public LibreTranslate mirrors now require API keys or return HTML landing pages, ship a local server with Docker:
+
+## Quick start (macOS/Linux)
+```bash
+cd self-host
+./run-server.sh
+```
+
+## Quick start (Windows PowerShell)
+```powershell
+cd self-host
+./run-server.ps1
+```
+
+This launches the official `libretranslate/libretranslate` container on `http://localhost:5000/translate`.
+
+Under the popup’s **Translation API endpoints** field, enter:
+```
+http://localhost:<chosen-port>/translate
+```
+Click **Save Endpoints**, optionally **Test Endpoint**, then start listening.
 
 # Documentation 
 manifest.json: 
@@ -24,7 +47,8 @@ content.js:
     Overlay UI, SpeechRecognition (when available), bridge to page script when not.
     Injects page.js via chrome.runtime.getURL('page.js') if needed.
     translateText(text, source, target): sends to background and tracks latency/HUD stats.
-    Handles messages START, STOP, CONFIG; shows toasts; HUD hotkeys (Ctrl/Cmd+Alt+D/B).
+    Overlays appear on the page; use Ctrl/Cmd+D to toggle HUD, Ctrl/Cmd+B to toggle debug logging.
+    Handles messages START, STOP, CONFIG; shows toasts; HUD hotkeys (Ctrl/Cmd+D/B).
 page.js: 
     Page-context SpeechRecognition handler for environments where content scripts cannot access it.
     Creates recognition; posts input transcript toast and translated toast via window messaging.
@@ -38,7 +62,7 @@ translator.js:
     Parallel endpoint racer for LibreTranslate-style APIs.
     translateViaEndpoints({ text, source, target, endpoints, timeoutMs, fetchImpl }): returns first success or { ok:false }.
     Exposes DEFAULT_ENDPOINTS.
-language-mapper.js: 
+language-mapper.js: BCP-47 (IETF language tag)
     Maps BCP-47/aliases to provider codes.
     mapToProviderLang(input): returns auto or base/alias.
 tests/translator.test.js: 
